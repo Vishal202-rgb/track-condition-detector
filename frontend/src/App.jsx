@@ -6,6 +6,7 @@ import TrendChart from "./components/TrendChart.jsx";
 import HistoryGallery from "./components/HistoryGallery.jsx";
 import { getTrend } from "./api.js";
 import { requestNotificationPermission, notifyTireChange } from "./utils/notifications.js";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -71,12 +72,14 @@ export default function App() {
         ))}
       </div>
 
-      {activeTab === "live" && <LiveCameraPanel onNewReading={refreshTrend} />}
-      {activeTab === "video" && <VideoUploadPanel onNewReadings={refreshTrend} />}
-      {activeTab === "image" && <UploadPanel onNewReading={refreshTrend} />}
-      {activeTab === "history" && <HistoryGallery />}
+     <ErrorBoundary>
+        {activeTab === "live" && <LiveCameraPanel onNewReading={refreshTrend} />}
+        {activeTab === "video" && <VideoUploadPanel onNewReadings={refreshTrend} />}
+        {activeTab === "image" && <UploadPanel onNewReading={refreshTrend} />}
+        {activeTab === "history" && <HistoryGallery />}
 
-      {activeTab !== "history" && <TrendChart trend={trend} />}
+        {activeTab !== "history" && <TrendChart trend={trend} />}
+      </ErrorBoundary>
     </div>
   );
 }

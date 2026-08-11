@@ -2,7 +2,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { analyzeImage } from "../api.js";
 import ConditionBadge from "./ConditionBadge.jsx";
 
-const CAPTURE_INTERVAL_MS = 15000; // snapshot every 15s while live
+const CAPTURE_INTERVAL_MS = 5000;
 
 export default function LiveCameraPanel({ onNewReading }) {
   const videoRef = useRef(null);
@@ -14,49 +14,81 @@ export default function LiveCameraPanel({ onNewReading }) {
   const [lastResult, setLastResult] = useState(null);
   const [error, setError] = useState(null);
   const [captureCount, setCaptureCount] = useState(0);
+  const [unsupported, setUnsupported] = useState(false);
+
+  // Check camera support up front so we show a clear message instead of
+  // crashing when the button is pressed on an unsupported browser/context.
+  useEffect(() => {
+    const isSecure = window.isSecureContext;
+    const hasMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+
+    if (!isSecure) {
+      setUnsupported(true);
+      setError("Camera requires a secure connection (HTTPS). This page is not served over HTTPS.");
+    } else if (!hasMediaDevices) {
+      setUnsupported(true);
+      setError("Camera API is not supported in this browser.");
+    }
+  }, []);
 
   const captureAndAnalyze = useCallback(async () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || video.readyState < 2) return;
+    try {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (!video || !canvas || video.readyState < 2) return;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    canvas.toBlob(
-      async (blob) => {
-        if (!blob) return;
-        const file = new File([blob], `live-${Date.now()}.jpg`, { type: "image/jpeg" });
-        try {
-          const result = await analyzeImage(file);
-          setLastResult(result);
-          setCaptureCount((c) => c + 1);
-          onNewReading(result);
-        } catch (err) {
-          setError(err.response?.data?.error || err.message);
-        }
-      },
-      "image/jpeg",
-      0.85
-    );
+      canvas.toBlob(
+        async (blob) => {
+          if (!blob) return;
+          const file = new File([blob], `live-${Date.now()}.jpg`, { type: "image/jpeg" });
+          try {
+            const result = await analyzeImage(file);
+            setLastResult(result);
+            setCaptureCount((c) => c + 1);
+            onNewReading(result);
+          } catch (err) {
+            setError(err.response?.data?.error || err.message);
+          }
+        },
+        "image/jpeg",
+        0.85
+      );
+    } catch (err) {
+      setError("Capture failed: " + err.message);
+    }
   }, [onNewReading]);
 
   async function startLive() {
     setError(null);
+    if (unsupported) return;
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }, // prefer rear camera on phones
+        video: { facingMode: "environment" },
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+        try {
+          await videoRef.current.play();
+        } catch (playErr) {
+          console.warn("Video play() failed, continuing anyway:", playErr.message);
+        }
       }
       setIsLive(true);
     } catch (err) {
-      setError("Could not access camera: " + err.message);
+      let message = "Could not access camera: " + err.message;
+      if (err.name === "NotAllowedError") {
+        message = "Camera permission denied. Please allow camera access in your browser settings.";
+      } else if (err.name === "NotFoundError") {
+        message = "No camera found on this device.";
+      }
+      setError(message);
     }
   }
 
@@ -70,7 +102,6 @@ export default function LiveCameraPanel({ onNewReading }) {
 
   useEffect(() => {
     if (isLive) {
-      // Capture immediately on start, then on the interval
       captureAndAnalyze();
       intervalRef.current = setInterval(captureAndAnalyze, CAPTURE_INTERVAL_MS);
     } else if (intervalRef.current) {
@@ -81,7 +112,6 @@ export default function LiveCameraPanel({ onNewReading }) {
     };
   }, [isLive, captureAndAnalyze]);
 
-  // Stop camera if component unmounts while live
   useEffect(() => {
     return () => stopLive();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -105,23 +135,24 @@ export default function LiveCameraPanel({ onNewReading }) {
       />
       <canvas ref={canvasRef} style={{ display: "none" }} />
 
-      {!isLive && (
-        <p style={{ color: "#9a9a9a", marginTop: 0 }}>
-          Starts your camera and auto-analyzes a frame every {CAPTURE_INTERVAL_MS / 1000}s —
-          good for a live trackside demo without needing to upload manually.
+      {!isLive && !unsupported && (
+        <p style={{ color: "#8a8a8a", marginTop: 0 }}>
+          Starts your camera and auto-analyzes a frame every {CAPTURE_INTERVAL_MS / 1000}s.
         </p>
       )}
 
       <div className="upload-row" style={{ marginTop: 12 }}>
         {!isLive ? (
-          <button onClick={startLive}>Start live feed</button>
+          <button onClick={startLive} disabled={unsupported}>
+            Start live feed
+          </button>
         ) : (
-          <button onClick={stopLive} style={{ background: "#a83d3d" }}>
+          <button onClick={stopLive} className="btn-secondary">
             Stop live feed
           </button>
         )}
         {isLive && (
-          <span style={{ color: "#9a9a9a", fontSize: 13 }}>
+          <span style={{ color: "#8a8a8a", fontSize: 13 }}>
             Captures taken: {captureCount}
           </span>
         )}
