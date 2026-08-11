@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { UploadCloud, Sparkles, Sun, CloudRain, Wind, AlertCircle, Cpu, FileText } from "lucide-react";
 import { analyzeImage } from "../api.js";
+import { getBrowserLocation, fetchWeather } from "../utils/weather.js";
 import ConditionBadge from "./ConditionBadge.jsx";
 import SkeletonLoader from "./SkeletonLoader.jsx";
 
@@ -15,6 +16,7 @@ export default function UploadPanel({ activeSector, onNewReading }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [weather, setWeather] = useState("");
+  const [weatherLoading, setWeatherLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastResult, setLastResult] = useState(null);

@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import os from "os";
 import Reading from "../models/Reading.js";
 import { saveReading } from "../utils/store.js";
 import { classifyWithAI } from "../utils/classify.js";
@@ -10,7 +11,7 @@ import { fetchTrackWeather } from "../utils/weather.js";
 
 const router = express.Router();
 
-const uploadsDir = path.resolve("uploads");
+const uploadsDir = path.join(os.tmpdir(), "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -44,14 +45,16 @@ router.post("/", upload.single("image"), async (req, res) => {
 
   let result;
   let source = "ai";
+  let debugReason = null;
 
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
-      throw new Error("No ANTHROPIC_API_KEY set, falling back to heuristic");
+      throw new Error("ANTHROPIC_API_KEY is missing or not loaded from .env");
     }
     result = await classifyWithAI(imageBuffer, mediaType);
   } catch (err) {
-    console.warn("AI classification failed, using heuristic fallback:", err.message);
+    console.error("AI classification failed, using heuristic fallback:", err.message);
+    debugReason = err.message;
     result = await classifyWithHeuristic(imageBuffer);
     source = "heuristic";
   }
@@ -75,7 +78,7 @@ router.post("/", upload.single("image"), async (req, res) => {
     sectorId,
   });
 
-  res.json(reading);
+  res.json({ ...reading.toObject(), debugReason });
 });
 
 export default router;

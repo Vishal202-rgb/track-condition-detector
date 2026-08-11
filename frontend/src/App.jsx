@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { Gauge, RefreshCw } from "lucide-react";
 import UploadPanel from "./components/UploadPanel.jsx";
+import LiveCameraPanel from "./components/LiveCameraPanel.jsx";
+import VideoUploadPanel from "./components/VideoUploadPanel.jsx";
 import TrendChart from "./components/TrendChart.jsx";
 import SectorSelector from "./components/SectorSelector.jsx";
 import CircuitMap from "./components/CircuitMap.jsx";
@@ -10,8 +12,17 @@ import SectorMatrix from "./components/SectorMatrix.jsx";
 import ExportToolbar from "./components/ExportToolbar.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { getTrend } from "./api.js";
+import { requestNotificationPermission, notifyTireChange } from "./utils/notifications.js";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 
 const POLL_INTERVAL_MS = 4000;
+
+const TABS = [
+  { id: "live", label: "Live camera" },
+  { id: "video", label: "Video clip" },
+  { id: "image", label: "Single image" },
+  { id: "history", label: "History" },
+];
 
 export default function App() {
   const [trend, setTrend] = useState(null);
@@ -31,10 +42,25 @@ export default function App() {
   }, [activeSector]);
 
   useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
+  useEffect(() => {
     refreshTrend();
     const interval = setInterval(refreshTrend, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [refreshTrend]);
+
+  // Fire a browser notification when the suggestion signals a tire change
+  // window, but only once per unique suggestion (avoid spamming every poll).
+  useEffect(() => {
+    if (!trend || !trend.suggestion) return;
+    const isTireChangeAlert = trend.suggestion.toLowerCase().includes("tire change");
+    if (isTireChangeAlert && lastNotifiedRef.current !== trend.suggestion) {
+      notifyTireChange(trend.suggestion);
+      lastNotifiedRef.current = trend.suggestion;
+    }
+  }, [trend]);
 
   return (
     <ErrorBoundary>

@@ -1,22 +1,7 @@
 import sharp from "sharp";
 
-/**
- * Fast, free, local first-pass classifier based on image brightness stats.
- * Not as accurate as the AI vision model, but has zero latency/cost, so it's
- * useful as a fallback when the API is unavailable, rate-limited, or you
- * just want a quick local guess before spending an API call.
- *
- * Heuristic logic:
- * - Wet surfaces have bright specular highlights -> high max brightness + high variance
- * - Damp surfaces are darker overall with moderate variance (no bright highlights)
- * - Dry surfaces are more uniform -> low variance
- * - Drying surfaces sit in between damp and dry on variance
- *
- * @param {Buffer} imageBuffer
- * @returns {Promise<{label: string, confidence: number, reasoning: string}>}
- */
 export async function classifyWithHeuristic(imageBuffer) {
-  const { data, info } = await sharp(imageBuffer)
+  const { data } = await sharp(imageBuffer)
     .resize(200, 200, { fit: "inside" })
     .greyscale()
     .raw()
@@ -26,35 +11,37 @@ export async function classifyWithHeuristic(imageBuffer) {
   const n = pixels.length;
 
   const mean = pixels.reduce((sum, v) => sum + v, 0) / n;
-  const variance =
-    pixels.reduce((sum, v) => sum + (v - mean) ** 2, 0) / n;
+  const variance = pixels.reduce((sum, v) => sum + (v - mean) ** 2, 0) / n;
   const stdDev = Math.sqrt(variance);
   const maxVal = Math.max(...pixels);
-
-  // Fraction of pixels that are near-white (specular highlight proxy)
-  const brightPixelRatio =
-    pixels.filter((v) => v > 220).length / n;
+  const brightPixelRatio = pixels.filter((v) => v > 220).length / n;
 
   let label;
   let reasoning;
+  let signalStrength; // how strongly the image matches this label, 0-1
 
   if (brightPixelRatio > 0.03 && maxVal > 240) {
     label = "Wet";
     reasoning = "Bright specular highlights suggest standing water";
+    signalStrength = Math.min(brightPixelRatio * 10, 1);
   } else if (stdDev > 45) {
     label = "Drying";
     reasoning = "High brightness variance suggests patchy drying surface";
+    signalStrength = Math.min((stdDev - 45) / 40, 1);
   } else if (mean < 100 && stdDev > 25) {
     label = "Damp";
     reasoning = "Darker, moderately uneven surface without bright highlights";
+    signalStrength = Math.min((stdDev - 25) / 30, 1);
   } else {
     label = "Dry";
     reasoning = "Uniform brightness with no reflections detected";
+    signalStrength = Math.min((40 - stdDev) / 40, 1);
   }
 
-  // Heuristic confidence is intentionally capped lower than the AI path,
-  // since this is a much cruder signal.
-  const confidence = 0.55;
+  // Confidence now actually varies per image: base 0.4 + up to 0.4 more
+  // depending on how strong the matched signal is. Never hits 100% since
+  // this is a crude heuristic, not the real AI model.
+  const confidence = Math.round((0.4 + Math.max(0, signalStrength) * 0.4) * 100) / 100;
 
-  return { label, confidence, reasoning, info };
+  return { label, confidence, reasoning };
 }

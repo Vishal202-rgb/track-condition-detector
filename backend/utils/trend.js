@@ -1,8 +1,3 @@
-/**
- * Compute a simple linear trend (slope) over a series of wetness index values.
- * Uses least-squares slope over the index positions (0, 1, 2, ...) vs value.
- * Positive slope = getting wetter. Negative slope = getting drier.
- */
 export function computeSlope(values) {
   const n = values.length;
   if (n < 2) return 0;
@@ -22,10 +17,6 @@ export function computeSlope(values) {
   return numerator / denominator;
 }
 
-/**
- * Turn a slope + current wetness index into a human-readable trend
- * direction and a tire-change suggestion. Thresholds are tunable.
- */
 export function deriveSuggestion(slope, latestIndex) {
   const DRYING_THRESHOLD = -0.3;
   const WETTING_THRESHOLD = 0.3;
@@ -56,4 +47,58 @@ export function deriveSuggestion(slope, latestIndex) {
   }
 
   return { trendDirection, suggestion };
+}
+
+/**
+ * UNIQUE FEATURE: Time-to-Dry / Time-to-Wet ETA prediction.
+ * Uses REAL elapsed time (not just reading count) between the first and
+ * last reading in the window to compute a rate of change per minute, then
+ * linearly extrapolates when the track will cross the Dry (0) or Wet (3)
+ * boundary. This directly answers the problem statement's core ask:
+ * "know right now if the track is becoming safer or riskier" — with an
+ * actual time estimate, not just a direction.
+ */
+export function computeEta(readings) {
+  if (readings.length < 2) {
+    return { etaMinutes: null, etaLabel: null, ratePerMinute: 0 };
+  }
+
+  const first = readings[0];
+  const last = readings[readings.length - 1];
+  const minutesElapsed =
+    (new Date(last.timestamp) - new Date(first.timestamp)) / 60000;
+
+  if (minutesElapsed <= 0) {
+    return { etaMinutes: null, etaLabel: null, ratePerMinute: 0 };
+  }
+
+  const indexChange = last.wetnessIndex - first.wetnessIndex;
+  const ratePerMinute = indexChange / minutesElapsed;
+
+  // Rate too small to mean anything — track is essentially static
+  if (Math.abs(ratePerMinute) < 0.01) {
+    return { etaMinutes: null, etaLabel: null, ratePerMinute };
+  }
+
+  const DRY = 0;
+  const WET = 3;
+  const latestIndex = last.wetnessIndex;
+
+  if (ratePerMinute < 0) {
+    // Trending toward Dry
+    const minutesToDry = (latestIndex - DRY) / Math.abs(ratePerMinute);
+    return {
+      etaMinutes: Math.max(0, Math.round(minutesToDry)),
+      etaLabel: "Dry",
+      ratePerMinute,
+    };
+  } else {
+    // Trending toward Wet
+    const minutesToWet = (WET - latestIndex) / ratePerMinute;
+    return {
+      etaMinutes: Math.max(0, Math.round(minutesToWet)),
+      etaLabel: "Wet",
+      ratePerMinute,
+    };
+  }
 }

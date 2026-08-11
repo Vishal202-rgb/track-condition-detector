@@ -12,10 +12,23 @@ import { TrendingDown, TrendingUp, Minus, Activity, ShieldAlert } from "lucide-r
 
 const INDEX_TO_LABEL = ["Dry", "Drying", "Damp", "Wet"];
 
+const RISK_SYMBOLS = {
+  Safe: "✓",
+  Caution: "⚠",
+  Danger: "⛔",
+};
+
 function formatTime(ts) {
   if (!ts) return "";
   const d = new Date(ts);
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+function formatEta(minutes) {
+  if (minutes === null || minutes === undefined) return null;
+  if (minutes < 1) return "less than a minute";
+  if (minutes > 120) return "60+ minutes";
+  return `~${minutes} min`;
 }
 
 export default function TrendChart({ trend }) {
@@ -40,12 +53,9 @@ export default function TrendChart({ trend }) {
     confidence: r.confidence ? Math.round(r.confidence * 100) + "%" : "N/A",
   }));
 
-  const bannerClass =
-    trend.trendDirection === "drying"
-      ? "suggestion-drying"
-      : trend.trendDirection === "wetting"
-      ? "suggestion-wetting"
-      : "suggestion-stable";
+  const etaText = formatEta(trend.etaMinutes);
+  const directionSymbol =
+    trend.trendDirection === "drying" ? "↓" : trend.trendDirection === "wetting" ? "↑" : "→";
 
   const renderTrendIcon = () => {
     if (trend.trendDirection === "drying") return <TrendingDown size={18} color="#f59e0b" />;

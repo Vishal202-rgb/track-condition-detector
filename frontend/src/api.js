@@ -32,3 +32,8 @@ export async function seedDemoData() {
 }
 
 export default api;
+
+export async function clearHistory() {
+  const { data } = await api.delete("/trend/history");
+  return data;
+}

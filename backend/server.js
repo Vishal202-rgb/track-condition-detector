@@ -6,11 +6,12 @@ import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import path from "path";
+import os from "os";
 
 import analyzeRouter from "./routes/analyze.js";
+import analyzeVideoRouter from "./routes/analyzeVideo.js";
 import trendRouter from "./routes/trend.js";
 import seedRouter from "./routes/seed.js";
-
 
 dotenv.config();
 
@@ -19,9 +20,10 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
-app.use("/uploads", express.static(path.resolve("uploads")));
+app.use("/uploads", express.static(path.join(os.tmpdir(), "uploads")));
 
 app.use("/api/analyze", analyzeRouter);
+app.use("/api/analyze-video", analyzeVideoRouter);
 app.use("/api/trend", trendRouter);
 app.use("/api/seed", seedRouter);
 
@@ -29,7 +31,6 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Basic error handler (e.g. multer file-type rejections)
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(400).json({ error: err.message || "Something went wrong" });
