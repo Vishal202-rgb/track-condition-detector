@@ -53,6 +53,13 @@ export default function TrendChart({ trend }) {
     confidence: r.confidence ? Math.round(r.confidence * 100) + "%" : "N/A",
   }));
 
+  const bannerClass =
+    trend.trendDirection === "drying"
+      ? "suggestion-drying"
+      : trend.trendDirection === "wetting"
+      ? "suggestion-wetting"
+      : "suggestion-stable";
+
   const etaText = formatEta(trend.etaMinutes);
   const directionSymbol =
     trend.trendDirection === "drying" ? "↓" : trend.trendDirection === "wetting" ? "↑" : "→";
