@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import UploadPanel from "./components/UploadPanel.jsx";
 import LiveCameraPanel from "./components/LiveCameraPanel.jsx";
 import VideoUploadPanel from "./components/VideoUploadPanel.jsx";
 import TrendChart from "./components/TrendChart.jsx";
 import HistoryGallery from "./components/HistoryGallery.jsx";
 import { getTrend } from "./api.js";
+import { requestNotificationPermission, notifyTireChange } from "./utils/notifications.js";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -18,6 +19,7 @@ const TABS = [
 export default function App() {
   const [trend, setTrend] = useState(null);
   const [activeTab, setActiveTab] = useState("live");
+  const lastNotifiedRef = useRef(null);
 
   const refreshTrend = useCallback(async () => {
     try {
@@ -29,10 +31,25 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
+  useEffect(() => {
     refreshTrend();
     const interval = setInterval(refreshTrend, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [refreshTrend]);
+
+  // Fire a browser notification when the suggestion signals a tire change
+  // window, but only once per unique suggestion (avoid spamming every poll).
+  useEffect(() => {
+    if (!trend || !trend.suggestion) return;
+    const isTireChangeAlert = trend.suggestion.toLowerCase().includes("tire change");
+    if (isTireChangeAlert && lastNotifiedRef.current !== trend.suggestion) {
+      notifyTireChange(trend.suggestion);
+      lastNotifiedRef.current = trend.suggestion;
+    }
+  }, [trend]);
 
   return (
     <div className="app">

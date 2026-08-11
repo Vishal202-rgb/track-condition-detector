@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getHistory, clearHistory } from "../api.js";
+import { exportCSV, exportJSON } from "../utils/export.js";
 import ConditionBadge from "./ConditionBadge.jsx";
 
 function formatTime(ts) {
@@ -35,9 +36,7 @@ export default function HistoryGallery() {
   }, []);
 
   async function handleClear() {
-    const confirmed = window.confirm(
-      "Delete all history? This cannot be undone."
-    );
+    const confirmed = window.confirm("Delete all history? This cannot be undone.");
     if (!confirmed) return;
 
     setClearing(true);
@@ -56,7 +55,7 @@ export default function HistoryGallery() {
     return (
       <div className="card">
         <div className="section-title">History</div>
-        <p style={{ color: "#9a9a9a" }}>Loading past readings...</p>
+        <p style={{ color: "#8a8a8a" }}>Loading past readings...</p>
       </div>
     );
   }
@@ -69,26 +68,32 @@ export default function HistoryGallery() {
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 14,
+          flexWrap: "wrap",
+          gap: 10,
         }}
       >
         <div className="section-title" style={{ marginBottom: 0 }}>
           History ({readings.length} readings)
         </div>
         {readings.length > 0 && (
-          <button
-            onClick={handleClear}
-            disabled={clearing}
-            style={{ background: "#a83d3d" }}
-          >
-            {clearing ? "Clearing..." : "Clear history"}
-          </button>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button className="btn-secondary" onClick={() => exportCSV(readings)}>
+              Export CSV
+            </button>
+            <button className="btn-secondary" onClick={() => exportJSON(readings)}>
+              Export JSON
+            </button>
+            <button className="btn-secondary" onClick={handleClear} disabled={clearing}>
+              {clearing ? "Clearing..." : "Clear history"}
+            </button>
+          </div>
         )}
       </div>
 
       {error && <div className="error-text">{error}</div>}
 
       {readings.length === 0 ? (
-        <p style={{ color: "#9a9a9a" }}>No readings yet — analyze an image to get started.</p>
+        <p style={{ color: "#8a8a8a" }}>No readings yet — analyze an image to get started.</p>
       ) : (
         <div className="history-grid">
           {readings.map((r) => (

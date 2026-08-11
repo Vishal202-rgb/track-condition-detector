@@ -5,8 +5,8 @@
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: #0f1115;
-  color: #e6e6e6;
+  background: #0a0a0a;
+  color: #f5f5f5;
 }
 
 .app {
@@ -23,7 +23,7 @@ h1 {
 }
 
 .subtitle {
-  color: #9a9a9a;
+  color: #8a8a8a;
   margin-bottom: 32px;
   font-size: 15px;
   line-height: 1.5;
@@ -31,12 +31,11 @@ h1 {
 }
 
 .card {
-  background: #171a21;
-  border: 1px solid #2a2d36;
+  background: #141414;
+  border: 1px solid #2b2b2b;
   border-radius: 14px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .upload-row {
@@ -47,13 +46,13 @@ h1 {
 }
 
 input[type="file"] {
-  color: #e6e6e6;
+  color: #f5f5f5;
 }
 
 input[type="text"] {
-  background: #0f1115;
-  border: 1px solid #2a2d36;
-  color: #e6e6e6;
+  background: #0a0a0a;
+  border: 1px solid #2b2b2b;
+  color: #f5f5f5;
   padding: 10px 12px;
   border-radius: 8px;
   flex: 1;
@@ -63,23 +62,23 @@ input[type="text"] {
 
 input[type="text"]:focus {
   outline: none;
-  border-color: #3d7bfd;
+  border-color: #f5f5f5;
 }
 
 button {
-  background: #3d7bfd;
-  color: white;
+  background: #f5f5f5;
+  color: #0a0a0a;
   border: none;
   padding: 11px 20px;
   border-radius: 9px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
+  transition: opacity 0.15s ease, transform 0.1s ease;
 }
 
 button:hover:not(:disabled) {
-  background: #5a8dff;
+  opacity: 0.85;
 }
 
 button:active:not(:disabled) {
@@ -87,9 +86,21 @@ button:active:not(:disabled) {
 }
 
 button:disabled {
-  background: #2a2d36;
+  background: #2b2b2b;
   color: #6b6b6b;
   cursor: not-allowed;
+}
+
+/* Secondary / muted buttons (e.g. Auto-detect, Clear history) */
+.btn-secondary {
+  background: transparent;
+  color: #f5f5f5;
+  border: 1px solid #3a3a3a;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: #f5f5f5;
+  opacity: 1;
 }
 
 .preview-img {
@@ -98,7 +109,7 @@ button:disabled {
   margin-top: 16px;
   max-height: 320px;
   display: block;
-  border: 1px solid #2a2d36;
+  border: 1px solid #2b2b2b;
 }
 
 .badge {
@@ -109,36 +120,65 @@ button:disabled {
   border-radius: 999px;
   font-weight: 600;
   font-size: 15px;
+  background: #1c1c1c;
+  border: 1px solid #3a3a3a;
+  color: #f5f5f5;
 }
 
-.badge-dry { background: #1f3d24; color: #7fe28a; }
-.badge-damp { background: #3d3410; color: #f0c94a; }
-.badge-drying { background: #3d2a10; color: #f0a44a; }
-.badge-wet { background: #10233d; color: #4aa8f0; }
+.badge-symbol {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.badge-confidence {
+  opacity: 0.6;
+  font-weight: 400;
+  font-size: 13px;
+}
 
 .suggestion-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 16px 20px;
   border-radius: 11px;
   font-weight: 500;
   margin-top: 18px;
   font-size: 15px;
+  background: #1c1c1c;
+  border: 1px solid #3a3a3a;
 }
 
-.suggestion-stable { background: #1f3d24; color: #b7f0be; }
-.suggestion-drying { background: #3d2a10; color: #f0c69a; }
-.suggestion-wetting { background: #10233d; color: #9ac6f0; }
+.direction-symbol {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.eta-banner {
+  padding: 12px 20px;
+  border-radius: 11px;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #cfcfcf;
+  background: transparent;
+  border: 1px dashed #3a3a3a;
+}
 
 .meta-row {
   display: flex;
   gap: 18px;
-  color: #9a9a9a;
+  color: #8a8a8a;
   font-size: 13px;
   margin-top: 12px;
   flex-wrap: wrap;
 }
 
 .error-text {
-  color: #f06a6a;
+  color: #f5f5f5;
+  background: #1c1c1c;
+  border: 1px solid #3a3a3a;
+  padding: 8px 12px;
+  border-radius: 8px;
   margin-top: 12px;
   font-size: 14px;
 }
@@ -157,9 +197,9 @@ button:disabled {
 }
 
 .tab-btn {
-  background: #171a21;
-  border: 1px solid #2a2d36;
-  color: #9a9a9a;
+  background: transparent;
+  border: 1px solid #2b2b2b;
+  color: #8a8a8a;
   padding: 10px 20px;
   border-radius: 9px;
   font-size: 14px;
@@ -169,14 +209,14 @@ button:disabled {
 }
 
 .tab-btn:hover {
-  border-color: #3d7bfd;
-  color: #e6e6e6;
+  border-color: #f5f5f5;
+  color: #f5f5f5;
 }
 
 .tab-btn.tab-active {
-  background: #3d7bfd;
-  border-color: #3d7bfd;
-  color: white;
+  background: #f5f5f5;
+  border-color: #f5f5f5;
+  color: #0a0a0a;
 }
 
 .history-grid {
@@ -186,8 +226,8 @@ button:disabled {
 }
 
 .history-item {
-  background: #0f1115;
-  border: 1px solid #2a2d36;
+  background: #0a0a0a;
+  border: 1px solid #2b2b2b;
   border-radius: 10px;
   overflow: hidden;
 }
@@ -201,4 +241,69 @@ button:disabled {
 
 .history-item-body {
   padding: 12px;
+}
+
+.badge-uncertain {
+  border-style: dashed;
+  opacity: 0.9;
+}
+
+.badge-flag {
+  font-size: 13px;
+  margin-left: 2px;
+}
+
+.risk-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  border: 1px solid #3a3a3a;
+}
+
+.risk-symbol {
+  font-size: 16px;
+}
+
+.risk-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.risk-reason {
+  color: #8a8a8a;
+  font-size: 13px;
+}
+
+.risk-safe {
+  border-color: #3a3a3a;
+}
+
+.risk-caution {
+  border-style: dashed;
+  border-color: #f5f5f5;
+}
+
+.risk-danger {
+  background: #f5f5f5;
+  color: #0a0a0a;
+  border-color: #f5f5f5;
+}
+
+.risk-danger .risk-reason {
+  color: #3a3a3a;
+}
+
+.weather-alert-banner {
+  padding: 14px 18px;
+  border-radius: 11px;
+  margin-top: 10px;
+  font-size: 14px;
+  background: #1c1c1c;
+  border: 1px solid #f5f5f5;
+  line-height: 1.5;
 }

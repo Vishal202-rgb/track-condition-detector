@@ -1,14 +1,28 @@
+const LABEL_SYMBOLS = {
+  Dry: "○",
+  Damp: "◐",
+  Drying: "↝",
+  Wet: "●",
+};
+
+const LOW_CONFIDENCE_THRESHOLD = 0.6;
+
 export default function ConditionBadge({ label, confidence }) {
   if (!label) return null;
 
-  const badgeClass = `badge badge-${label.toLowerCase()}`;
+  const isLowConfidence =
+    typeof confidence === "number" && confidence < LOW_CONFIDENCE_THRESHOLD;
 
   return (
-    <span className={badgeClass}>
+    <span className={`badge ${isLowConfidence ? "badge-uncertain" : ""}`}>
+      <span className="badge-symbol">{LABEL_SYMBOLS[label] || "•"}</span>
       {label}
       {typeof confidence === "number" && (
-        <span style={{ opacity: 0.7, fontWeight: 400 }}>
-          {Math.round(confidence * 100)}%
+        <span className="badge-confidence">{Math.round(confidence * 100)}%</span>
+      )}
+      {isLowConfidence && (
+        <span className="badge-flag" title="Low confidence reading — verify manually">
+          ⚠
         </span>
       )}
     </span>
