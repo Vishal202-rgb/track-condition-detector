@@ -13,7 +13,6 @@ import ExportToolbar from "./components/ExportToolbar.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { getTrend } from "./api.js";
 import { requestNotificationPermission, notifyTireChange } from "./utils/notifications.js";
-import ErrorBoundary from "./components/ErrorBoundary.jsx";
 
 const POLL_INTERVAL_MS = 4000;
 
