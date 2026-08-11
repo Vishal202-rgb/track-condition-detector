@@ -36,5 +36,5 @@
 - [x] Add one-click judge presentation mode with focused navigation and callouts
 - [x] Add regression tests and verify video, heatmap, and presentation interactions
 - [x] Save and deliver the video-and-judge-mode enhancement checkpoint
-- [ ] Create a dedicated GitHub pull-request branch for the verified enhancement checkpoint
-- [ ] Commit and push the branch to the user's fork, then provide the pull-request details
+- [x] Create a dedicated GitHub pull-request branch for the verified enhancement checkpoint
+- [x] Commit and push the branch to the user's fork, then provide the pull-request details
