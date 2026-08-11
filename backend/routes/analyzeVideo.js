@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import os from "os";
 import Reading from "../models/Reading.js";
 import { classifyWithAI } from "../utils/classify.js";
 import { classifyWithHeuristic } from "../utils/heuristic.js";
@@ -9,8 +10,8 @@ import { extractFrames } from "../utils/videoFrames.js";
 
 const router = express.Router();
 
-const uploadsDir = path.resolve("uploads");
-const framesDir = path.resolve("uploads", "frames");
+const uploadsDir = path.join(os.tmpdir(), "uploads");
+const framesDir = path.join(os.tmpdir(), "uploads", "frames");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -31,10 +32,7 @@ const upload = multer({
   },
 });
 
-// Cap how many frames we actually classify per upload, so a long video
-// doesn't burn through API quota or take forever during a live demo.
 const MAX_FRAMES = 15;
-// How many frames per second of video to sample. 0.5 = one frame every 2s.
 const SAMPLE_FPS = 0.5;
 
 // POST /api/analyze-video
@@ -56,8 +54,6 @@ router.post("/", upload.single("video"), async (req, res) => {
     }
 
     const readings = [];
-    // Space out timestamps by 1s per frame so the trend chart shows a
-    // clean left-to-right progression instead of everything at once.
     const baseTime = Date.now();
 
     for (let i = 0; i < framePaths.length; i++) {
@@ -78,8 +74,6 @@ router.post("/", upload.single("video"), async (req, res) => {
       }
 
       const wetnessIndex = Reading.LABEL_TO_INDEX[result.label];
-      // Copy the frame into uploads/ (not the temp frames subfolder) so it's
-      // servable at a stable /uploads/... URL for the frontend to display.
       const publicFrameName = `${path.parse(req.file.filename).name}-frame-${i}.jpg`;
       fs.copyFileSync(framePath, path.join(uploadsDir, publicFrameName));
 
@@ -96,7 +90,6 @@ router.post("/", upload.single("video"), async (req, res) => {
       readings.push(reading);
     }
 
-    // Clean up the temp frame extraction folder
     fs.rmSync(jobDir, { recursive: true, force: true });
 
     res.json({ framesProcessed: readings.length, readings });
