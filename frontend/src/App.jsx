@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Gauge, RefreshCw } from "lucide-react";
 import UploadPanel from "./components/UploadPanel.jsx";
 import LiveCameraPanel from "./components/LiveCameraPanel.jsx";
@@ -27,6 +27,7 @@ export default function App() {
   const [trend, setTrend] = useState(null);
   const [activeSector, setActiveSector] = useState("sector-1");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const lastNotifiedRef = useRef(null);
 
   const refreshTrend = useCallback(async () => {
     setIsRefreshing(true);
