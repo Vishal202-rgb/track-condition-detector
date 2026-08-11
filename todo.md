@@ -1,0 +1,40 @@
+# TrackSense Pro TODO
+
+- [x] Define database schema for telemetry readings and audit logs in `drizzle/schema.ts`
+- [x] Implement database query helpers in `server/db.ts`
+- [x] Implement Open-Meteo weather auto-fetch helper in `server/services/weather.ts`
+- [x] Implement Claude API classification with MD5 buffer caching and heuristic fallback in `server/services/classifier.ts`
+- [x] Implement linear regression trend engine and tire strategy math in `server/services/trend.ts`
+- [x] Create tRPC routers for analysis, trends, sectors, simulation, history, and export in `server/routers/telemetry.ts` and wire into `server/routers.ts`
+- [x] Write unit tests for slope math, tire rules, and weather fetching in `server/telemetry.test.ts`
+- [x] Build F1 dark command center layout with neon accents and persistent sidebar navigation in `client/src/components/DashboardLayout.tsx` or custom layout
+- [x] Implement Mission Control overview dashboard with live telemetry widgets and circuit status
+- [x] Implement Live Analysis image upload drag-and-drop panel with confidence flagging (< 75%) and moisture condition badges (Dry / Damp / Wet / Drying)
+- [x] Implement Sector Matrix component supporting exact sector names: Sector 1 (Turn 1–4), Sector 2 (Chicane), Sector 3 (Straight), Pit Lane
+- [x] Implement Strategy Engine with Recharts area chart, confidence band, moisture saturation meter (0–100%), and tire recommendation (Slicks / Intermediates / Full Wets)
+- [x] Implement Simulation mode supporting 3 preset scenarios (dry race, safety car wet, drying track) running 4 laps
+- [x] Implement History gallery with session logs, CSV export, and printable engineering debrief report
+- [x] Run automated vitest tests and verify build success
+- [x] Save project checkpoint and deliver final result
+- [x] Add and migrate an audit log table for analysis events
+- [x] Add a dedicated sectors tRPC procedure and wire sector data from the backend
+- [x] Mount DashboardLayout in App.tsx so the persistent sidebar is rendered
+- [x] Replace hardcoded history rows with telemetry.history data and empty/loading states
+- [x] Perform end-to-end reliability validation across dashboard, API, and authenticated flows
+- [x] Add or refine regression tests for discovered reliability risks
+- [x] Verify production build, runtime logs, responsive UI, and recovery states
+- [x] Save a post-validation checkpoint and deliver the reliability report
+- [x] Exercise authenticated telemetry analysis, history, CSV export, and session protection with dedicated router tests
+- [x] Save the completed post-validation checkpoint and deliver the updated reliability report
+- [x] Add guided four-condition replay controls for hackathon demonstration flow
+- [x] Add explainable condition evidence and confidence rationale to the telemetry verdict
+- [x] Add a race-control alert layer with explicit tire-change timing language
+- [x] Add regression coverage and validate the expanded dashboard experience
+- [x] Save and deliver the enhanced challenge-focused checkpoint
+- [x] Add short-video input with bounded sampled-frame extraction and sequential analysis
+- [x] Add a live per-sector circuit moisture heatmap overlay
+- [x] Add one-click judge presentation mode with focused navigation and callouts
+- [x] Add regression tests and verify video, heatmap, and presentation interactions
+- [x] Save and deliver the video-and-judge-mode enhancement checkpoint
+- [ ] Create a dedicated GitHub pull-request branch for the verified enhancement checkpoint
+- [ ] Commit and push the branch to the user's fork, then provide the pull-request details
