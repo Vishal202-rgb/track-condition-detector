@@ -11,6 +11,7 @@ import os from "os";
 import analyzeRouter from "./routes/analyze.js";
 import analyzeVideoRouter from "./routes/analyzeVideo.js";
 import trendRouter from "./routes/trend.js";
+import seedRouter from "./routes/seed.js";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use("/uploads", express.static(path.join(os.tmpdir(), "uploads")));
 app.use("/api/analyze", analyzeRouter);
 app.use("/api/analyze-video", analyzeVideoRouter);
 app.use("/api/trend", trendRouter);
+app.use("/api/seed", seedRouter);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });

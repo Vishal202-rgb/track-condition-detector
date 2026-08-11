@@ -42,6 +42,10 @@ const readingSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  sectorId: {
+    type: String,
+    default: "sector-1",
+  },
   timestamp: {
     type: Date,
     default: Date.now,

@@ -1,77 +1,105 @@
-# Live Track Condition Detector
+# TrackSense AI — Live Track Surface Telemetry & Pit Strategy Engine
 
-Classifies race track surface condition (Dry / Damp / Wet / Drying) from uploaded images,
-tracks the trend over time, and suggests when a tire change window may be approaching.
+A high-performance racetrack surface telemetry platform that classifies surface moisture conditions (**Dry / Damp / Wet / Drying**), calculates moisture evolution slope over time, auto-fetches weather data, isolates track sectors, flags low-confidence AI predictions, and recommends optimal pit tire strategy windows.
 
-## Stack
-- **Backend**: Node.js, Express, MongoDB (Mongoose), Multer (uploads), Anthropic SDK (vision classification), Sharp (heuristic fallback)
-- **Frontend**: React (Vite), Recharts, Axios
+---
 
-## How it works
-1. You upload a track image (or weather info, optional).
-2. The backend sends the image to Claude's vision API, which returns a label
-   (Dry/Damp/Wet/Drying), a confidence score, and a one-line reasoning. If no API key is set
-   or the call fails, it falls back to a local brightness-based heuristic (`utils/heuristic.js`).
-3. Each reading is stored in MongoDB with a numeric `wetnessIndex` (Dry=0, Drying=1, Damp=2, Wet=3).
-4. The trend endpoint computes a least-squares slope over the last N readings to determine if
-   the track is drying, wetting, or stable, and generates a suggestion message.
-5. The frontend polls the trend endpoint and displays the current condition, a live chart, and
-   the suggestion banner.
+## 🚀 Key Features
 
-## Setup
+- **🏎️ Multi-Sector Telemetry Tracking**: Tag and filter telemetry data per sector (*Sector 1: Turn 1-4*, *Sector 2: Chicane*, *Sector 3: Straight*, *Pit Lane*).
+- **🤖 Dual-Engine Classification**: AI Vision classification powered by Anthropic's Claude API with automated MD5 buffer caching, plus a local fallback heuristic classifier.
+- **⚡ Race Weather Auto-Fetch**: Integrates with Open-Meteo free API to automatically retrieve track ambient temperature, humidity, and wind speed if left blank.
+- **📊 Real-Time Strategy Telemetry**: Linear regression slope math (`computeSlope`) tracking moisture trends with automated pit stop tire advice (*Slicks*, *Intermediates*, *Full Wets*).
+- **⚠️ Confidence Flagging**: Auto-flags predictions with **< 75% AI confidence** for manual track-side inspection.
+- **🗺️ SVG Circuit Map & Environmental Gauge**: Interactive circuit map sector selector and surface moisture saturation meter (`0%` to `100%`).
+- **💾 CSV Export & Engineering Debrief**: 1-click CSV telemetry log downloader and printable engineering debrief report.
+- **🧪 Complete Automated Test Suite**: Built-in Unit Test and E2E Integration Test runner (`npm test`).
 
-### 1. Backend
+---
+
+## 🛠️ Stack
+
+- **Backend**: Node.js, Express, MongoDB (Mongoose) with transparent in-memory fallback, Sharp, Multer, Axios, Open-Meteo API, Anthropic SDK.
+- **Frontend**: React, Vite, Recharts, Lucide React, Google Fonts (*Outfit*, *Inter*, *JetBrains Mono*).
+
+---
+
+## ⚙️ Quick Start Guide
+
+### 1. Backend Setup
 ```bash
 cd backend
 npm install
-cp .env.example .env
-# edit .env: add your MONGODB_URI and ANTHROPIC_API_KEY
 npm run dev
 ```
 Backend runs on `http://localhost:5000`.
 
-**MongoDB**: easiest option is a free MongoDB Atlas cluster (https://www.mongodb.com/cloud/atlas) —
-create a cluster, get the connection string, paste it into `.env`. Local MongoDB also works if
-you have it installed (`mongodb://localhost:27017/trackdb`).
-
-**Anthropic API key**: get one from https://console.anthropic.com/. If you skip this, the app
-still works using the local heuristic classifier — just less accurate.
-
-### 2. Frontend
+### 2. Frontend Setup
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Frontend runs on `http://localhost:5173` (Vite proxies `/api` and `/uploads` to the backend).
+Frontend runs on `http://localhost:5173`.
 
-## API endpoints
-- `POST /api/analyze` — multipart form with `image` file (and optional `weather` text field). Returns the saved reading.
-- `GET /api/trend` — last N readings + computed slope, trend direction, and suggestion.
-- `GET /api/trend/history` — full reading history.
-- `GET /api/health` — health check.
+---
 
-## Project structure
+## 🔬 Testing & Data Seeding
+
+### Run Automated Unit & E2E Integration Tests
+```bash
+cd backend
+npm test
 ```
-backend/
-  models/Reading.js       - Mongoose schema
-  routes/analyze.js       - POST /api/analyze
-  routes/trend.js         - GET /api/trend, /api/trend/history
-  utils/classify.js       - Anthropic vision API call
-  utils/heuristic.js      - local brightness-based fallback classifier
-  utils/trend.js          - slope calculation + suggestion rules
-  server.js               - Express app entrypoint
+Executes 11 automated tests covering linear regression math, tire rules, Open-Meteo weather fetch, and API endpoints.
 
-frontend/
-  src/components/UploadPanel.jsx   - image upload + preview + result
-  src/components/ConditionBadge.jsx - colored condition label
-  src/components/TrendChart.jsx    - Recharts line chart + suggestion banner
-  src/App.jsx                      - polls /api/trend every 4s
-  src/api.js                       - axios helpers
+### Seed Sample Telemetry Data
+```bash
+curl -X POST http://localhost:5000/api/seed
 ```
+Seeds 10 historical telemetry readings across all 4 track sectors.
 
-## Ideas to extend for the demo
-- Feed a sequence of images quickly to show the trend line move in real time.
-- Sample frames from a pre-recorded video (e.g. with `ffmpeg` before upload) to simulate a live camera feed.
-- Add a second camera / location field to compare multiple track sections.
-- Surface the AI's `reasoning` field prominently — it's a good way to show judges the model isn't a black box.
+---
+
+## 📡 API Endpoints
+
+- `POST /api/analyze` — Upload track image (`image`), optional `weather` string, and `sectorId`. Auto-fetches weather if omitted.
+- `GET /api/trend?sector=sector-1` — Retrieves sector-specific telemetry readings, slope, trend direction, and tire strategy.
+- `POST /api/seed` — Seeds batch historical telemetry readings.
+- `GET /api/health` — Health check endpoint.
+
+---
+
+## 📁 Repository Structure
+
+```
+track-condition-detector/
+├── backend/
+│   ├── models/Reading.js         - Mongoose schema with sectorId
+│   ├── routes/analyze.js         - POST /api/analyze endpoint
+│   ├── routes/trend.js           - GET /api/trend endpoint
+│   ├── routes/seed.js            - POST /api/seed batch endpoint
+│   ├── utils/classify.js         - AI Vision classifier with MD5 cache
+│   ├── utils/heuristic.js        - Local fallback classifier
+│   ├── utils/store.js            - MongoDB & in-memory store adapter
+│   ├── utils/trend.js            - Least-squares slope math & tire engine
+│   ├── utils/weather.js          - Open-Meteo weather auto-fetch
+│   ├── tests/trend.test.js       - Unit tests for slope math
+│   ├── tests/integration.test.js - E2E API integration test suite
+│   └── scripts/generate_test_images.js - Sample JPEG test generator
+│
+├── frontend/
+│   ├── src/components/UploadPanel.jsx       - Drag & drop image uploader
+│   ├── src/components/ConditionBadge.jsx    - High-contrast badge & warning flag
+│   ├── src/components/TrendChart.jsx       - Telemetry AreaChart & strategy advice
+│   ├── src/components/SectorSelector.jsx   - Track sector selector
+│   ├── src/components/CircuitMap.jsx       - SVG Circuit Map & sector heatmap
+│   ├── src/components/EnvironmentalGauge.jsx - Saturation meter & weather stats
+│   ├── src/components/LiveSimulationBar.jsx - Instant preset & 4-lap simulator
+│   ├── src/components/SectorMatrix.jsx     - Multi-sector comparison table
+│   ├── src/components/ExportToolbar.jsx    - CSV export & print debrief
+│   ├── src/components/ErrorBoundary.jsx    - React error boundary
+│   └── src/App.jsx                         - Main telemetry dashboard
+│
+└── test_images/                           - Sample JPEG test images
+```
