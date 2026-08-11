@@ -3,8 +3,10 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import Reading from "../models/Reading.js";
+import { saveReading } from "../utils/store.js";
 import { classifyWithAI } from "../utils/classify.js";
 import { classifyWithHeuristic } from "../utils/heuristic.js";
+import { fetchTrackWeather } from "../utils/weather.js";
 
 const router = express.Router();
 
@@ -30,7 +32,7 @@ const upload = multer({
 });
 
 // POST /api/analyze
-// multipart/form-data with field "image", optional field "weather"
+// multipart/form-data with field "image", optional fields "weather", "sectorId"
 router.post("/", upload.single("image"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No image file provided" });
@@ -54,16 +56,23 @@ router.post("/", upload.single("image"), async (req, res) => {
     source = "heuristic";
   }
 
-  const wetnessIndex = Reading.LABEL_TO_INDEX[result.label];
+  let weather = req.body.weather;
+  if (!weather || weather.trim() === "") {
+    weather = await fetchTrackWeather();
+  }
 
-  const reading = await Reading.create({
+  const wetnessIndex = Reading.LABEL_TO_INDEX[result.label];
+  const sectorId = req.body.sectorId || "sector-1";
+
+  const reading = await saveReading({
     imageUrl,
     label: result.label,
     wetnessIndex,
     confidence: result.confidence,
     reasoning: result.reasoning,
     source,
-    weather: req.body.weather || "",
+    weather,
+    sectorId,
   });
 
   res.json(reading);

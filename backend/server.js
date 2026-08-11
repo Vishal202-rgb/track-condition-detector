@@ -9,6 +9,7 @@ import path from "path";
 
 import analyzeRouter from "./routes/analyze.js";
 import trendRouter from "./routes/trend.js";
+import seedRouter from "./routes/seed.js";
 
 
 dotenv.config();
@@ -22,6 +23,7 @@ app.use("/uploads", express.static(path.resolve("uploads")));
 
 app.use("/api/analyze", analyzeRouter);
 app.use("/api/trend", trendRouter);
+app.use("/api/seed", seedRouter);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });

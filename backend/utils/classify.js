@@ -1,11 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
+import crypto from "crypto";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// Change this if Anthropic releases a newer model you'd rather use.
-// Any current Claude model with vision support works here.
 const MODEL = "claude-sonnet-5";
 
 const SYSTEM_PROMPT = `You are a racetrack surface analyst. You look at a single photo of a
@@ -19,6 +18,9 @@ race track surface and classify its condition. Use these visual cues:
 Respond with ONLY a JSON object, no other text, no markdown fences:
 {"label": "Dry" | "Damp" | "Wet" | "Drying", "confidence": 0.0-1.0, "reasoning": "one short sentence"}`;
 
+// In-memory response cache for API rate-limiting & speed
+const classificationCache = new Map();
+
 /**
  * Classify a track image using Claude's vision capability.
  * @param {Buffer} imageBuffer - raw image bytes
@@ -26,6 +28,12 @@ Respond with ONLY a JSON object, no other text, no markdown fences:
  * @returns {Promise<{label: string, confidence: number, reasoning: string}>}
  */
 export async function classifyWithAI(imageBuffer, mediaType) {
+  const hash = crypto.createHash("md5").update(imageBuffer).digest("hex");
+  if (classificationCache.has(hash)) {
+    console.log(`[Cache Hit] Returning cached AI result for image hash ${hash.substring(0, 8)}`);
+    return classificationCache.get(hash);
+  }
+
   const base64Image = imageBuffer.toString("base64");
 
   const response = await anthropic.messages.create({
@@ -58,7 +66,6 @@ export async function classifyWithAI(imageBuffer, mediaType) {
     throw new Error("No text response from classification model");
   }
 
-  // Strip markdown fences defensively in case the model adds them anyway.
   const cleaned = textBlock.text.replace(/```json|```/g, "").trim();
   const parsed = JSON.parse(cleaned);
 
@@ -66,5 +73,6 @@ export async function classifyWithAI(imageBuffer, mediaType) {
     throw new Error(`Unexpected label from model: ${parsed.label}`);
   }
 
+  classificationCache.set(hash, parsed);
   return parsed;
 }
