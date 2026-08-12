@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1786483709713,
+      "tag": "0000_modern_brother_voodoo",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1786483909086,
+      "tag": "0001_first_captain_marvel",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1786484371308,
+      "tag": "0002_eager_peter_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1786486209889,
+      "tag": "0003_natural_captain_universe",
+      "breakpoints": true
+    }
+  ]
+}
