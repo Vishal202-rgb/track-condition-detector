@@ -39,12 +39,12 @@
 - [x] Create a dedicated GitHub pull-request branch for the verified enhancement checkpoint
 - [x] Commit and push the branch to the user's fork, then provide the pull-request details
 - [x] Re-author the existing pull-request commits with the user's verified GitHub identity
-- [ ] Force-push and verify the corrected GitHub contribution attribution
-- [ ] Resolve the contribution attribution for the already merged upstream pull request with explicit user approval
-- [ ] Assess upstream maintainer permissions and `main` branch protections before any merged-history rewrite
-- [ ] Create and verify a remote backup of upstream `main` before correcting merged commit attribution
-- [ ] Obtain upstream maintainer write access before attempting the backup and attribution rewrite
-- [ ] Retry the upstream backup and contribution-attribution rewrite after access confirmation
+- [x] Defer the upstream contribution-attribution force-push at the user's direction
+- [x] Defer resolution of the already merged upstream pull request attribution at the user's direction
+- [x] Assess upstream maintainer permissions and `main` branch protections before any merged-history rewrite
+- [x] Defer remote backup creation for the upstream history rewrite at the user's direction
+- [x] Record that this session did not receive effective upstream write permission for the attempted correction
+- [x] Defer retrying the upstream backup and contribution-attribution rewrite at the user's direction
 - [x] Diagnose why the deployed Turbo Titan project is not working
 - [x] Document the deployed Vercel sign-in gate and `FUNCTION_INVOCATION_FAILED` telemetry endpoint root failure
 - [x] Provide the redeployment requirements for the corrected public MongoDB build
