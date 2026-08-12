@@ -38,3 +38,23 @@
 - [x] Save and deliver the video-and-judge-mode enhancement checkpoint
 - [x] Create a dedicated GitHub pull-request branch for the verified enhancement checkpoint
 - [x] Commit and push the branch to the user's fork, then provide the pull-request details
+- [x] Re-author the existing pull-request commits with the user's verified GitHub identity
+- [x] Defer the upstream contribution-attribution force-push at the user's direction
+- [x] Defer resolution of the already merged upstream pull request attribution at the user's direction
+- [x] Assess upstream maintainer permissions and `main` branch protections before any merged-history rewrite
+- [x] Defer remote backup creation for the upstream history rewrite at the user's direction
+- [x] Record that this session did not receive effective upstream write permission for the attempted correction
+- [x] Defer retrying the upstream backup and contribution-attribution rewrite at the user's direction
+- [x] Diagnose why the deployed Turbo Titan project is not working
+- [x] Document the deployed Vercel sign-in gate and `FUNCTION_INVOCATION_FAILED` telemetry endpoint root failure
+- [x] Provide the redeployment requirements for the corrected public MongoDB build
+- [x] Add a Vercel-compatible serverless entrypoint for the Express/tRPC telemetry API
+- [x] Ensure Vercel routes the telemetry API before the single-page application fallback
+- [x] Remove the sign-up and sign-in gate from the initial application experience
+- [x] Replace MySQL-dependent persistence with the prior MongoDB-backed implementation where available
+- [x] Configure future GitHub commits to use the user's verified author identity
+- [x] Validate the configured MongoDB connection with an automated health check
+- [x] Complete the public MongoDB telemetry regression coverage and TypeScript compatibility updates
+- [x] Ensure MongoDB connection health checks tolerate observed cold-start latency
+- [x] Remove residual MySQL and Drizzle source files and dependencies after migration validation
+- [x] Obtain upstream maintainer write access before attempting the backup and attribution rewrite
