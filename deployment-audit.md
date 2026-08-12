@@ -13,4 +13,10 @@
 
 ## Redeployment Requirement
 
-The corrected branch must be deployed with a server-side `MONGODB_URI` environment variable. It now includes an `api/[...path].ts` Vercel serverless entrypoint that exposes the shared Express/tRPC application and ordered Vercel routes that send API traffic to that function before falling back to the Vite static client build.
+The corrected branch must be deployed with a server-side `MONGODB_URI` environment variable. It uses a single `api/index.ts` Express function with explicit tRPC path normalization and JSON error handling, while Vercel rewrites API and storage routes to that function before falling back to the Vite static client build.
+
+## Vercel Function-Type Investigation
+
+The owner-provided Vercel log for commit `e993564` shows the static Vite build finishing successfully, followed by non-fatal TypeScript diagnostics in Express request and response types. The identical commit passes a fresh local `pnpm install --frozen-lockfile` and `pnpm check`, so the diagnostics are specific to Vercel's function build environment rather than the repository type graph. Vercel's Node.js runtime guidance notes that function request objects may not include all framework helper properties, reinforcing the need to keep the Vercel function boundary explicit rather than reuse the development-server entrypoint. Source: https://vercel.com/docs/functions/runtimes/node-js
+
+Vercel also documents that TypeScript path mappings are not supported for Node.js function entrypoints. The server runtime imports now use relative paths instead of the `@shared/*` aliases so the serverless bundler can resolve the tRPC, OAuth, and SDK dependencies at function startup.

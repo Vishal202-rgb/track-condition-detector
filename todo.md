@@ -58,3 +58,18 @@
 - [x] Ensure MongoDB connection health checks tolerate observed cold-start latency
 - [x] Remove residual MySQL and Drizzle source files and dependencies after migration validation
 - [x] Obtain upstream maintainer write access before attempting the backup and attribution rewrite
+- [x] Inspect the active Turbo Titan Vercel deployment and capture its exact runtime failure
+- [ ] Obtain access to the Vercel project that currently owns `turbo-titan.vercel.app`, or create an approved replacement deployment
+- [ ] Create a user-owned Vercel project from the corrected `fix/public-mongodb-vercel` branch
+- [ ] Configure the user-owned Vercel project with the required MongoDB environment variables
+- [ ] Verify the user-owned Vercel URL loads the public TrackSense dashboard and telemetry API
+- [x] Consolidate the validated repair branch into the user's fork `main` branch
+- [x] Remove the merged repair branch from the user's fork after main is updated
+- [ ] Prepare the upstream repository update from the user's consolidated fork `main` branch
+- [ ] Reproduce the Vercel Express request and response TypeScript errors from the owner deployment log
+- [ ] Correct the Express type dependency mismatch so the Vercel TypeScript compilation is clean
+- [ ] Restore the stable single-function Vercel API routing shape and verify the live telemetry handler no longer crashes
+- [ ] Remove server-side TypeScript path aliases that Vercel does not support in function bundles
+- [ ] Push the Vercel build compatibility fix to the user's fork `main` branch
+- [ ] Correct the live Vercel deployment configuration and runtime incompatibility
+- [ ] Verify the public Turbo Titan URL and telemetry endpoint after redeployment
