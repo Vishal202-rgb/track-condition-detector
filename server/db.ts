@@ -1,131 +1,115 @@
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, telemetryReadings, InsertTelemetryReading, auditLogs } from "../drizzle/schema";
-import { ENV } from './_core/env';
-import { desc, asc, and } from "drizzle-orm";
+import { MongoClient, type ObjectId } from "mongodb";
+import type { User } from "./_core/user";
 
-let _db: ReturnType<typeof drizzle> | null = null;
+const mongoUri = process.env.MONGODB_URI ?? "";
+const databaseName = process.env.MONGODB_DB_NAME || "tracksense";
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
-export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
-    }
-  }
-  return _db;
-}
+let clientPromise: Promise<MongoClient> | null = null;
 
-export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
+export type PublicUserRecord = User;
 
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
+export type CreateTelemetryReadingInput = {
+  sectorId: string;
+  condition: string;
+  confidence: number;
+  saturation: number;
+  tireStrategy: string;
+  pitWindowLap: number;
+  slope: string;
+  temp?: string;
+  humidity?: string;
+  windSpeed?: string;
+  imageUrl?: string;
+  source: string;
+};
 
-  try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
+export type TelemetryReading = CreateTelemetryReadingInput & {
+  id: string;
+  createdAt: Date;
+};
 
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
+type MongoTelemetryReading = CreateTelemetryReadingInput & { _id: ObjectId; createdAt: Date };
 
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
+async function getClient() {
+  if (!mongoUri) throw new Error("MongoDB is not configured");
+  if (!clientPromise) {
+    const client = new MongoClient(mongoUri, { serverSelectionTimeoutMS: 20_000 });
+    clientPromise = client.connect().catch((error) => {
+      clientPromise = null;
+      throw error;
     });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
   }
+  return clientPromise;
 }
 
-export async function getUserByOpenId(openId: string) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
+async function getDatabase() {
+  return (await getClient()).db(databaseName);
 }
 
-export async function createTelemetryReading(data: InsertTelemetryReading) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const [result] = await db.insert(telemetryReadings).values(data);
-  return result;
+function toTelemetryReading(document: MongoTelemetryReading): TelemetryReading {
+  const { _id, ...reading } = document;
+  return { ...reading, id: _id.toHexString() };
 }
 
-export async function getTelemetryReadings(userId: number, sectorId?: string, limit: number = 100) {
-  const db = await getDb();
-  if (!db) return [];
-  if (sectorId) {
-    return await db.select().from(telemetryReadings)
-      .where(and(eq(telemetryReadings.userId, userId), eq(telemetryReadings.sectorId, sectorId)))
-      .orderBy(desc(telemetryReadings.createdAt))
-      .limit(limit);
-  }
-  return await db.select().from(telemetryReadings)
-    .where(eq(telemetryReadings.userId, userId))
-    .orderBy(desc(telemetryReadings.createdAt))
-    .limit(limit);
+export async function createTelemetryReading(data: CreateTelemetryReadingInput): Promise<TelemetryReading> {
+  const createdAt = new Date();
+  const result = await (await getDatabase()).collection<CreateTelemetryReadingInput & { createdAt: Date }>("telemetry_readings").insertOne({ ...data, createdAt });
+  return { ...data, createdAt, id: result.insertedId.toHexString() };
 }
 
-export async function getAllTelemetryReadings(userId: number, limit: number = 250) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(telemetryReadings)
-    .where(eq(telemetryReadings.userId, userId))
-    .orderBy(asc(telemetryReadings.createdAt))
-    .limit(limit);
+export async function getTelemetryReadings(sectorId?: string, limit = 100): Promise<TelemetryReading[]> {
+  const filter = sectorId ? { sectorId } : {};
+  const readings = await (await getDatabase()).collection<MongoTelemetryReading>("telemetry_readings")
+    .find(filter)
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .toArray();
+  return readings.map(toTelemetryReading);
 }
 
-export async function createAuditLog(data: { userId: number; action: string; entity: string; message?: string; metadata?: string }) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot write audit log: database not available");
-    return;
-  }
-  await db.insert(auditLogs).values(data);
+export async function getAllTelemetryReadings(limit = 250): Promise<TelemetryReading[]> {
+  const readings = await (await getDatabase()).collection<MongoTelemetryReading>("telemetry_readings")
+    .find({})
+    .sort({ createdAt: 1 })
+    .limit(limit)
+    .toArray();
+  return readings.map(toTelemetryReading);
+}
+
+export async function createAuditLog(data: { action: string; entity: string; message?: string; metadata?: string }) {
+  await (await getDatabase()).collection("audit_logs").insertOne({ ...data, createdAt: new Date() });
+}
+
+/** Retained for the optional OAuth infrastructure; public telemetry does not require a session. */
+export async function upsertUser(user: Partial<PublicUserRecord> & Pick<PublicUserRecord, "openId">): Promise<void> {
+  const now = new Date();
+  const values = {
+    name: user.name ?? null,
+    email: user.email ?? null,
+    loginMethod: user.loginMethod ?? null,
+    role: user.role ?? "user",
+    lastSignedIn: user.lastSignedIn ?? now,
+    updatedAt: now,
+  };
+  await (await getDatabase()).collection("users").updateOne(
+    { openId: user.openId },
+    { $set: values, $setOnInsert: { openId: user.openId, createdAt: now } },
+    { upsert: true },
+  );
+}
+
+export async function getUserByOpenId(openId: string): Promise<PublicUserRecord | undefined> {
+  const user = await (await getDatabase()).collection("users").findOne({ openId });
+  if (!user) return undefined;
+  return {
+    id: Number.parseInt(user._id.toHexString().slice(-8), 16),
+    openId: user.openId,
+    name: user.name ?? null,
+    email: user.email ?? null,
+    loginMethod: user.loginMethod ?? null,
+    role: user.role === "admin" ? "admin" : "user",
+    createdAt: user.createdAt ?? new Date(),
+    updatedAt: user.updatedAt ?? new Date(),
+    lastSignedIn: user.lastSignedIn ?? new Date(),
+  };
 }

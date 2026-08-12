@@ -25,18 +25,8 @@ import { classifyTrackImage } from "./services/classifier";
 import { fetchLiveWeather } from "./services/weather";
 import { storagePut } from "./storage";
 
-const authenticatedContext = {
-  user: {
-    id: 77,
-    openId: "race-engineer",
-    name: "Race Engineer",
-    email: "engineer@example.com",
-    loginMethod: "manus",
-    role: "user" as const,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    lastSignedIn: new Date(),
-  },
+const publicContext = {
+  user: null,
   req: { protocol: "https", headers: {} },
   res: { clearCookie: vi.fn() },
 } as any;
@@ -46,16 +36,17 @@ const weather = { temp: "18°C", humidity: "70%", windSpeed: "10 km/h" };
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getTelemetryReadings).mockResolvedValue([] as never);
-  vi.mocked(createTelemetryReading).mockResolvedValue({ insertId: 101 } as never);
+  vi.mocked(getAllTelemetryReadings).mockResolvedValue([] as never);
+  vi.mocked(createTelemetryReading).mockResolvedValue({ id: "101" } as never);
   vi.mocked(createAuditLog).mockResolvedValue(undefined);
-  vi.mocked(storagePut).mockResolvedValue({ key: "77-track-images/reading.jpg", url: "https://example.test/reading.jpg" } as never);
+  vi.mocked(storagePut).mockResolvedValue({ key: "public-track-images/reading.jpg", url: "https://example.test/reading.jpg" } as never);
   vi.mocked(classifyTrackImage).mockResolvedValue({ condition: "Damp", confidence: 72, saturation: 48, source: "heuristic-fallback" });
   vi.mocked(fetchLiveWeather).mockResolvedValue(weather);
 });
 
-describe("authenticated telemetry workflows", () => {
-  it("analyzes a supported image, persists a unique asset, and returns a confidence flag", async () => {
-    const caller = telemetryRouter.createCaller(authenticatedContext);
+describe("public telemetry workflows", () => {
+  it("analyzes a supported image, persists a unique public asset, and returns a confidence flag", async () => {
+    const caller = telemetryRouter.createCaller(publicContext);
 
     const result = await caller.analyze({
       imageBase64: "data:image/jpeg;base64,AAECAwQFBgcICQoLDA0ODw==",
@@ -65,9 +56,8 @@ describe("authenticated telemetry workflows", () => {
     });
 
     expect(classifyTrackImage).toHaveBeenCalledOnce();
-    expect(storagePut).toHaveBeenCalledWith(expect.stringMatching(/^77-track-images\/\d+-[a-f0-9-]+\.jpeg$/), expect.any(Buffer), "image/jpeg");
+    expect(storagePut).toHaveBeenCalledWith(expect.stringMatching(/^public-track-images\/\d+-[a-f0-9-]+\.jpeg$/), expect.any(Buffer), "image/jpeg");
     expect(createTelemetryReading).toHaveBeenCalledWith(expect.objectContaining({
-      userId: 77,
       sectorId: "Sector 2 (Chicane)",
       condition: "Damp",
       saturation: 48,
@@ -78,10 +68,10 @@ describe("authenticated telemetry workflows", () => {
     expect(result.confidenceFlag).toBe(true);
   });
 
-  it("exports authenticated history as safely quoted CSV and bounds display history", async () => {
+  it("exports public history as safely quoted CSV and bounds display history", async () => {
     const createdAt = new Date("2026-08-11T22:00:00.000Z");
     vi.mocked(getAllTelemetryReadings).mockResolvedValue([{
-      id: 10,
+      id: "10",
       sectorId: "Pit Lane",
       condition: "Wet",
       confidence: 86,
@@ -95,25 +85,23 @@ describe("authenticated telemetry workflows", () => {
       source: "claude-api",
       createdAt,
     }] as never);
-    const caller = telemetryRouter.createCaller(authenticatedContext);
+    const caller = telemetryRouter.createCaller(publicContext);
 
     const [history, csv] = await Promise.all([caller.history(), caller.exportCsv()]);
 
     expect(history).toHaveLength(1);
     expect(csv).toContain('"Pit Lane"');
     expect(csv).toContain(createdAt.toISOString());
-    expect(getAllTelemetryReadings).toHaveBeenCalledWith(77);
-    expect(getAllTelemetryReadings).toHaveBeenCalledWith(77, 10_000);
+    expect(getAllTelemetryReadings).toHaveBeenCalledWith();
+    expect(getAllTelemetryReadings).toHaveBeenCalledWith(10_000);
   });
 
-  it("keeps every simulator scenario to exactly four laps and blocks unauthenticated history access", async () => {
-    const caller = telemetryRouter.createCaller(authenticatedContext);
+  it("keeps every simulator scenario to exactly four laps and allows anonymous history access", async () => {
+    const caller = telemetryRouter.createCaller(publicContext);
     const scenarios = ["dry race", "safety car wet", "drying track"] as const;
     for (const scenario of scenarios) {
       await expect(caller.simulate({ scenario })).resolves.toHaveLength(4);
     }
-
-    const anonymousCaller = telemetryRouter.createCaller({ ...authenticatedContext, user: null });
-    await expect(anonymousCaller.history()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(caller.history()).resolves.toEqual([]);
   });
 });

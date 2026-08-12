@@ -38,3 +38,22 @@
 - [x] Save and deliver the video-and-judge-mode enhancement checkpoint
 - [x] Create a dedicated GitHub pull-request branch for the verified enhancement checkpoint
 - [x] Commit and push the branch to the user's fork, then provide the pull-request details
+- [x] Re-author the existing pull-request commits with the user's verified GitHub identity
+- [ ] Force-push and verify the corrected GitHub contribution attribution
+- [ ] Resolve the contribution attribution for the already merged upstream pull request with explicit user approval
+- [ ] Assess upstream maintainer permissions and `main` branch protections before any merged-history rewrite
+- [ ] Create and verify a remote backup of upstream `main` before correcting merged commit attribution
+- [ ] Obtain upstream maintainer write access before attempting the backup and attribution rewrite
+- [ ] Retry the upstream backup and contribution-attribution rewrite after access confirmation
+- [x] Diagnose why the deployed Turbo Titan project is not working
+- [x] Document the deployed Vercel sign-in gate and `FUNCTION_INVOCATION_FAILED` telemetry endpoint root failure
+- [ ] Provide the redeployment requirements for the corrected public MongoDB build
+- [x] Add a Vercel-compatible serverless entrypoint for the Express/tRPC telemetry API
+- [x] Remove the sign-up and sign-in gate from the initial application experience
+- [x] Replace MySQL-dependent persistence with the prior MongoDB-backed implementation where available
+- [ ] Configure future GitHub commits to use the user's verified author identity
+- [x] Validate the configured MongoDB connection with an automated health check
+- [ ] Complete the public MongoDB telemetry regression coverage and TypeScript compatibility updates
+- [ ] Ensure MongoDB connection health checks tolerate observed cold-start latency
+- [ ] Remove residual MySQL and Drizzle source files and dependencies after migration validation
+- [x] Obtain upstream maintainer write access before attempting the backup and attribution rewrite

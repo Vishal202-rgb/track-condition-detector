@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import { publicProcedure, router } from "../_core/trpc";
 import { createAuditLog, createTelemetryReading, getAllTelemetryReadings, getTelemetryReadings } from "../db";
 import { classifyTrackImage } from "../services/classifier";
 import { fetchLiveWeather } from "../services/weather";
@@ -42,23 +42,22 @@ export const telemetryRouter = router({
   sectors: publicProcedure.query(() => SECTORS.map((id, index) => ({ id, index: index + 1, shortName: id.replace("Sector ", "S").replace(" (Turn 1–4)", "").replace(" (Chicane)", "").replace(" (Straight)", "") }))),
   weather: publicProcedure.query(() => fetchLiveWeather()),
 
-  analyze: protectedProcedure.input(analysisInput).mutation(async ({ ctx, input }) => {
+  analyze: publicProcedure.input(analysisInput).mutation(async ({ input }) => {
     const { buffer, mimeType } = decodeDataUrl(input.imageBase64);
     const result = await classifyTrackImage(buffer, mimeType);
     const weather = input.weather ?? await fetchLiveWeather();
     let imageUrl: string | undefined;
     try {
       const extension = mimeType.split("/")[1] ?? "jpg";
-      const upload = await storagePut(`${ctx.user.id}-track-images/${Date.now()}-${randomUUID()}.${extension}`, buffer, mimeType);
+      const upload = await storagePut(`public-track-images/${Date.now()}-${randomUUID()}.${extension}`, buffer, mimeType);
       imageUrl = upload.url;
     } catch (error) {
       console.warn("[Telemetry] Storage upload skipped:", error);
     }
 
-    const prior = await getTelemetryReadings(ctx.user.id, input.sectorId);
+    const prior = await getTelemetryReadings(input.sectorId);
     const trend = buildTrend([{ saturation: result.saturation, createdAt: new Date() }, ...prior]);
     const reading = await createTelemetryReading({
-      userId: ctx.user.id,
       sectorId: input.sectorId,
       condition: result.condition,
       confidence: result.confidence,
@@ -74,15 +73,15 @@ export const telemetryRouter = router({
     });
 
     try {
-      await createAuditLog({ userId: ctx.user.id, action: "track_analysis", entity: "telemetry_reading", message: `Classified ${input.sectorId} as ${result.condition}`, metadata: JSON.stringify({ sectorId: input.sectorId, confidence: result.confidence, saturation: result.saturation, source: result.source }) });
+      await createAuditLog({ action: "track_analysis", entity: "telemetry_reading", message: `Classified ${input.sectorId} as ${result.condition}`, metadata: JSON.stringify({ sectorId: input.sectorId, confidence: result.confidence, saturation: result.saturation, source: result.source }) });
     } catch (error) {
       console.warn("[Telemetry] Audit log write skipped:", error);
     }
     return { reading, result, weather, trend, confidenceFlag: result.confidence < 75 };
   }),
 
-  trend: protectedProcedure.input(z.object({ sectorId: z.enum(SECTORS) })).query(async ({ ctx, input }) => {
-    const readings = await getTelemetryReadings(ctx.user.id, input.sectorId);
+  trend: publicProcedure.input(z.object({ sectorId: z.enum(SECTORS) })).query(async ({ input }) => {
+    const readings = await getTelemetryReadings(input.sectorId);
     const latest = readings[0];
     return {
       sectorId: input.sectorId,
@@ -92,10 +91,10 @@ export const telemetryRouter = router({
     };
   }),
 
-  history: protectedProcedure.query(async ({ ctx }) => getAllTelemetryReadings(ctx.user.id)),
+  history: publicProcedure.query(async () => getAllTelemetryReadings()),
 
-  exportCsv: protectedProcedure.query(async ({ ctx }) => {
-    const readings = await getAllTelemetryReadings(ctx.user.id, 10_000);
+  exportCsv: publicProcedure.query(async () => {
+    const readings = await getAllTelemetryReadings(10_000);
     const header = "id,sectorId,condition,confidence,saturation,tireStrategy,pitWindowLap,slope,temp,humidity,windSpeed,source,createdAt";
     const lines = readings.map((r) => [r.id, r.sectorId, r.condition, r.confidence, r.saturation, r.tireStrategy, r.pitWindowLap, r.slope, r.temp ?? "", r.humidity ?? "", r.windSpeed ?? "", r.source, r.createdAt.toISOString()].map(value => `"${String(value).replaceAll('"', '""')}"`).join(","));
     return [header, ...lines].join("\n");
