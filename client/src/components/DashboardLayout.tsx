@@ -1,13 +1,7 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
-import { startLogin } from "@/const";
-import { useAuth } from "@/_core/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Activity, Gauge, History, LayoutDashboard, LogOut, PanelLeft, Radio, ScanLine, Split, Flag } from "lucide-react";
+import { Gauge, History, LayoutDashboard, Radio, ScanLine, Split, Flag } from "lucide-react";
 import { useLocation } from "wouter";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Button } from "./ui/button";
-import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { useEffect, useState } from "react";
 import { isJudgeModeRequested, subscribeToJudgeMode } from "@shared/presentationMode";
 
@@ -20,26 +14,10 @@ const menuItems = [
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { loading, user } = useAuth();
-  if (loading) return <DashboardLayoutSkeleton />;
-  if (!user) {
-    return (
-      <div className="min-h-screen telemetry-bg flex items-center justify-center p-6">
-        <div className="command-card max-w-md w-full p-8 text-center">
-          <div className="logo-mark mx-auto mb-5"><Activity className="h-5 w-5" /></div>
-          <p className="eyebrow mb-3">SECURE RACE ENGINEERING CONSOLE</p>
-          <h1 className="display-title text-4xl mb-3">TrackSense Pro</h1>
-          <p className="text-muted-foreground mb-7">Sign in to open a private telemetry workspace and save your race engineering sessions.</p>
-          <Button onClick={() => startLogin()} className="w-full neon-button">Sign in to Mission Control</Button>
-        </div>
-      </div>
-    );
-  }
   return <SidebarProvider defaultOpen={true}><DashboardLayoutContent>{children}</DashboardLayoutContent></SidebarProvider>;
 }
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
   const [location] = useLocation();
   const { toggleSidebar, state } = useSidebar();
   const isMobile = useIsMobile();
@@ -79,13 +57,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           <div className="mt-7 px-2"><div className="system-status"><span className="status-dot" /> SYSTEMS NOMINAL</div><div className="system-caption">Telemetry uplink stable<br />Model cache synchronized</div></div>
         </SidebarContent>
         <SidebarFooter className="border-t border-white/[0.06] p-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild><button className="flex w-full items-center gap-3 rounded-lg p-1.5 text-left hover:bg-white/[0.04]">
-              <Avatar className="h-8 w-8 border border-[#b7ff39]/30"><AvatarFallback className="bg-[#b7ff39]/10 text-[#b7ff39] text-xs">{user?.name?.charAt(0).toUpperCase() || "E"}</AvatarFallback></Avatar>
-              {!collapsed && <div className="min-w-0"><p className="truncate text-xs font-semibold text-white">{user?.name || "Engineer"}</p><p className="truncate text-[10px] text-muted-foreground">RACE ENGINEER</p></div>}
-            </button></DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48 bg-[#10151d] border-white/10"><DropdownMenuItem onClick={logout} className="text-red-300 focus:text-red-200"><LogOut className="mr-2 h-4 w-4" />Sign out</DropdownMenuItem></DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex w-full items-center gap-3 rounded-lg p-1.5 text-left">
+            <div className="logo-mark h-8 w-8 shrink-0"><Radio className="h-4 w-4" /></div>
+            {!collapsed && <div className="min-w-0"><p className="truncate text-xs font-semibold text-white">Trackside Console</p><p className="truncate text-[10px] text-muted-foreground">PUBLIC SESSION</p></div>}
+          </div>
         </SidebarFooter>
       </Sidebar>}
       <SidebarInset className="bg-transparent min-w-0" style={{ paddingLeft: judgeMode || isMobile ? 0 : collapsed ? "var(--sidebar-width-icon)" : "var(--sidebar-width)" }}>
