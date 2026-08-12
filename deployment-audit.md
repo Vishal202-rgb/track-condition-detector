@@ -13,4 +13,4 @@
 
 ## Redeployment Requirement
 
-The corrected branch must be deployed with a server-side `MONGODB_URI` environment variable. It now includes an `api/[...path].ts` Vercel serverless entrypoint that exposes the shared Express/tRPC application and a `vercel.json` configuration that separates API requests from the Vite static client build.
+The corrected branch must be deployed with a server-side `MONGODB_URI` environment variable. It now includes an `api/[...path].ts` Vercel serverless entrypoint that exposes the shared Express/tRPC application and ordered Vercel routes that send API traffic to that function before falling back to the Vite static client build.
